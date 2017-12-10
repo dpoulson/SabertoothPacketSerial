@@ -1,11 +1,13 @@
-""" Sabertooth Packet Serial Class """
+Sabertooth Packet Serial Class
+==============================
 
 This is a python class for using a Sabertooth speed controller that supports packet serial communication
 
 * https://www.dimensionengineering.com/
 * https://www.dimensionengineering.com/datasheets/USBSabertoothPacketSerialReference.pdf
 
-"" Functions ""
+Functions 
+---------
 
 * init
 * setTimeout
