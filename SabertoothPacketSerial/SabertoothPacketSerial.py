@@ -45,6 +45,14 @@ class SabertoothPacketSerial(object):
 
     """ Main class """
     def __init__(self, port='/dev/ttyACM0', baudrate='9600', address=128, check='Checksum'):
+        """ Initialise the object and connect to the serial port
+
+        Parameters:
+            port: Port to use
+            baudrate: Connection baudrate
+            address: Address of sabertooth speed controller
+            check: Use Checksum or CRC checks
+        """
         if __debug__:
             print "Initialising SabertoothPacketSerial: Port %s : baudrate %s : address %s : Checksum %s " % (port, baudrate, address, check)
         try:
@@ -57,6 +65,7 @@ class SabertoothPacketSerial(object):
 
 
     def _write_data(self,data):
+        """ Write the data to the serial port object
         try:
             sent = self._conn.write(data)
         except:
@@ -91,8 +100,28 @@ class SabertoothPacketSerial(object):
         return bytes(packet)
 
 
-    def _command(self, command, data, size)
+    def _command(self, command, data)
         """ Run command
+        size_d = len(data)
+        if _crc:
+            _address = address | 0xf0
+            # Do some CRC stufF
+        buffer = bytearray()
+        buffer[0] = _address
+        buffer[1] = command
+        buffer[2] = data[0]
+        if _crc:
+            buffer[3] = _generate_crc7(buffer[0:2])
+        else: 
+            buffer[3] = _generate_checksum(buffer[0:2])
+        if len(data) > 1:
+            for x in range(1, len(data)-1):
+                buffer[3+x] = data[x]
+            if _crc:
+                buffer[3] = _generate_crc14(buffer[0:2]) # FIX ME
+            else:
+                buffer[3] = _generate_checksum(buffer[0:2]) # FIX ME
+        self._write_data(self, buffer)
 
    
     def _set(self, type, number, value, setType)
@@ -107,7 +136,7 @@ class SabertoothPacketSerial(object):
         data[2] = 0 # Reverse bits from value 
         data[3] = type
         data[4] = number
-        self._command(SABERTOOTH_CMD_SET, data, sizeof(data))
+        self._command(SABERTOOTH_CMD_SET, data)
 
 
     def motor(self, number, value)
@@ -157,16 +186,4 @@ class SabertoothPacketSerial(object):
             data = value * 127
             self._write_data(self._generate_checksum_packet(command, 0, data))
         return 0
-
-
-
-    def sendText(self, cmds):
-        self._conn.write(cmds + b'\r\n')
- 
-
-    def getText(self, cmds):
-        self.sendText(cmds)
-        result = self._conn.read(100)
-        return result
-
 
