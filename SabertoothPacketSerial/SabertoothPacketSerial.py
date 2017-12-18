@@ -25,6 +25,20 @@ import binascii
 
 class SabertoothPacketSerial(object):
 
+    SABERTOOTH_CMD_SET = 40
+    SABERTOOTH_CMD_GET = 41
+    SABERTOOTH_RC_GET = 73
+
+    SABERTOOTH_GET_VALUE       = 0x00
+    SABERTOOTH_GET_BATTERY     = 0x10
+    SABERTOOTH_GET_CURRENT     = 0x20
+    SABERTOOTH_GET_TEMPERATURE = 0x40
+
+    SABERTOOTH_SET_VALUE     = 0x00
+    SABERTOOTH_SET_KEEPALIVE = 0x10
+    SABERTOOTH_SET_SHUTDOWN  = 0x20
+    SABERTOOTH_SET_TIMEOUT   = 0x40
+
     _conn = None
     _address = None
     _crc = False
@@ -50,10 +64,18 @@ class SabertoothPacketSerial(object):
         if __debug__:
             print "Packet contents: %s" % str(data)
             print "Data sent: {0}".format(sent)
-#            return_bytes = self._conn.read(sent)
-#            print "Loopback data - type: ", type(return_bytes), ", length: ",len(return_bytes), ", raw value: ", ','.join([x for x in return_bytes]), ", unicode representation: ", unicode(return_bytes)
+
+    def _generate_checksum(self, data)
+        """ Sum of data & 0b01111111
+        return (sum(data) & 0b01111111)
 
 
+    def _generate_crc7(self, data)
+        """ Generate a 7-bit CRC
+
+  
+    def _generate_crc14(self, data
+        """ Generate a 14-bit CRC
 
 
     def _generate_checksum_packet(self, command, com_value, data):
@@ -67,6 +89,40 @@ class SabertoothPacketSerial(object):
         packet[3] = chr(checksum)
 
         return bytes(packet)
+
+
+    def _command(self, command, data, size)
+        """ Run command
+
+   
+    def _set(self, type, number, value, setType)
+        """ Create the set packet
+        flag = bytes(setType)
+        if value < 0:
+            value = -value
+            flag = flag | 1
+        data = bytearray(5)
+        data[0] = flag
+        data[1] = 0 # Reverse bits from value
+        data[2] = 0 # Reverse bits from value 
+        data[3] = type
+        data[4] = number
+        self._command(SABERTOOTH_CMD_SET, data, sizeof(data))
+
+
+    def motor(self, number, value)
+        """ Set motor :number to :value
+        self._set('M', number, value, SABERTOOTH_SET_VALUE)
+
+
+    def drive(self, value)
+        """ Mixed mode drive
+        self.motor('D', value)
+
+
+    def turn(self, value)
+        """ Mixed mode turn
+        self.motor('T', value) 
 
 
     def driveCommand(self, value):
