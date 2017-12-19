@@ -20,6 +20,7 @@
 
 
 import serial
+import datetime
 import time
 import binascii
 
@@ -43,6 +44,7 @@ class SabertoothPacketSerial(object):
     _address = None
     _crc = False
 
+
     """ Main class """
     def __init__(self, port='/dev/ttyACM0', baudrate='9600', address=128, check='Checksum'):
         """ Initialise the object and connect to the serial port
@@ -54,7 +56,8 @@ class SabertoothPacketSerial(object):
             check: Use Checksum or CRC checks
         """
         if __debug__:
-            print "Initialising SabertoothPacketSerial: Port %s : baudrate %s : address %s : Checksum %s " % (port, baudrate, address, check)
+            print "%s : Initialising SabertoothPacketSerial: Port %s : baudrate %s : address %s : Checksum %s " % 
+                                    (datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'), port, baudrate, address, check)
         try:
             self._conn = serial.Serial(port,baudrate=baudrate)
         except:
@@ -71,12 +74,15 @@ class SabertoothPacketSerial(object):
         except:
             print "Failed to send data"
         if __debug__:
-            print "Packet contents: %s" % str(data)
-            print "Data sent: {0}".format(sent)
+            print "Private: Packet contents: %s" % binascii.hexlify(data)
+
 
     def _generate_checksum(self, data)
         """ Sum of data & 0b01111111
-        return (sum(data) & 0b01111111)
+        checksum = (sum(data) & 0b01111111)
+        if __debug__:
+            print "Private: Checksum generated: %s" binascii.hexlify(checksum)
+        return checksum
 
 
     def _generate_crc7(self, data)
@@ -85,19 +91,6 @@ class SabertoothPacketSerial(object):
   
     def _generate_crc14(self, data
         """ Generate a 14-bit CRC
-
-
-    def _generate_checksum_packet(self, command, com_value, data):
-        checksum = (self._address + int(command) + int(data)) & 0b01111111 
-        if __debug__:
-            print "Checksum generated : %s" % checksum
-        packet = bytearray(4)
-        packet[0] = self._address
-        packet[1] = chr(int(command))
-        packet[2] = chr(int(data))
-        packet[3] = chr(checksum)
-
-        return bytes(packet)
 
 
     def _command(self, command, data)
@@ -121,6 +114,8 @@ class SabertoothPacketSerial(object):
                 buffer[3] = _generate_crc14(buffer[0:2]) # FIX ME
             else:
                 buffer[3] = _generate_checksum(buffer[0:2]) # FIX ME
+        if __debug__:
+            print "Private: Command buffer: %s" % binascii.hexlify(buffer)
         self._write_data(self, buffer)
 
    
@@ -136,22 +131,53 @@ class SabertoothPacketSerial(object):
         data[2] = 0 # Reverse bits from value 
         data[3] = type
         data[4] = number
+        if __debug__:
+            print "Private: Data to send: %s" % binascii.hexlify(data)
         self._command(SABERTOOTH_CMD_SET, data)
 
 
     def motor(self, number, value)
         """ Set motor :number to :value
+        if __debug__:
+            print "Public: Command received: Motor %s %s" % (number, value)
         self._set('M', number, value, SABERTOOTH_SET_VALUE)
 
 
     def drive(self, value)
         """ Mixed mode drive
+        if __debug__:
+            print "Public: Command received: Drive %s" % value
         self.motor('D', value)
 
 
     def turn(self, value)
         """ Mixed mode turn
+        if __debug__:
+            print "Public: Command received: Turn %s" % value
         self.motor('T', value) 
+
+
+    def keepAlive(self)
+        """ Send a keepalive call
+        if __debug__:
+            print "Public: Command received: keepAlive"
+        self._set('M', '*', 0, SABERTOOTH_SET_KEEPALIVE)
+
+
+    ##############################
+    # Old routines, to be removed
+
+    def _generate_checksum_packet(self, command, com_value, data):
+        checksum = (self._address + int(command) + int(data)) & 0b01111111
+        if __debug__:
+            print "Checksum generated : %s" % binascii.hexlify(checksum)
+        packet = bytearray(4)
+        packet[0] = self._address
+        packet[1] = chr(int(command))
+        packet[2] = chr(int(data))
+        packet[3] = chr(checksum)
+
+        return bytes(packet)
 
 
     def driveCommand(self, value):
