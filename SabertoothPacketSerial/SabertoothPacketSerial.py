@@ -37,6 +37,7 @@ class SabertoothPacketSerial(object):
 
     SABERTOOTH_SET_VALUE     = 0x00
     SABERTOOTH_SET_KEEPALIVE = 0x10
+    #SABERTOOTH_SET_KEEPALIVE = 16
     SABERTOOTH_SET_SHUTDOWN  = 0x20
     SABERTOOTH_SET_TIMEOUT   = 0x40
 
@@ -64,6 +65,8 @@ class SabertoothPacketSerial(object):
             print "Failed to open serial port %s" % port
         if check == 'CRC':
             self._crc = True
+        else:
+            self._crc = False
         self._address = address
 
 
@@ -79,9 +82,12 @@ class SabertoothPacketSerial(object):
 
     def _generate_checksum(self, data):
         """ Sum of data & 0b01111111 """
-        checksum = (sum(data) & 0b01111111)
+        print "Private (checksum): Data: %s " % binascii.hexlify(data)
+        total = sum(bytearray(data))
+        print "Private (checksum): Total: %s" % total
+        checksum = (total & 0b01111111)
         if __debug__:
-            print "Private: Checksum generated: %s" % binascii.hexlify(checksum)
+            print "Private: Checksum generated: %s" % checksum
         return checksum
 
 
@@ -98,51 +104,54 @@ class SabertoothPacketSerial(object):
     def _command(self, command, data):
         """ Run command """
         size_d = len(data)
-        if _crc:
-            _address = address | 0xf0
+        if self._crc:
+            self._address = address | 0xf0
             # Do some CRC stufF
         buffer = bytearray()
-        buffer[0] = _address
-        buffer[1] = command
-        buffer[2] = data[0]
-        if _crc:
-            buffer[3] = _generate_crc7(buffer[0:2])
+        buffer.append(self._address)
+        buffer.append(command)
+        buffer.append(data[0])
+        if self._crc:
+            buffer.append(self._generate_crc7(buffer[0:3]))
         else: 
-            buffer[3] = _generate_checksum(buffer[0:2])
+            buffer.append(self._generate_checksum(buffer[0:3]))
         if len(data) > 1:
-            for x in range(1, len(data)-1):
-                buffer[3+x] = data[x]
-            if _crc:
-                buffer[3] = _generate_crc14(buffer[0:2]) # FIX ME
+            for x in range(1, size_d):
+                buffer.append(data[x])
+            if self._crc:
+                buffer.append(self._generate_crc14(buffer[4:4+size_d]))
             else:
-                buffer[3] = _generate_checksum(buffer[0:2]) # FIX ME
+                buffer.append(self._generate_checksum(buffer[4:4+size_d]))
         if __debug__:
             print "Private: Command buffer: %s" % binascii.hexlify(buffer)
-        self._write_data(self, buffer)
+        self._write_data(buffer)
 
    
     def _set(self, type, number, value, setType):
         """ Create the set packet """
+        print "setType = %s" % setType
         flag = bytes(setType)
         if value < 0:
+            print "Value less than 0"
             value = -value
             flag = flag | 1
+        print "flag = %s" % flag
         data = bytearray(5)
-        data[0] = flag
+        data[0] = chr(int(flag))
         data[1] = 0 # Reverse bits from value
         data[2] = 0 # Reverse bits from value 
         data[3] = type
         data[4] = number
         if __debug__:
             print "Private: Data to send: %s" % binascii.hexlify(data)
-        self._command(SABERTOOTH_CMD_SET, data)
+        self._command(self.SABERTOOTH_CMD_SET, data)
 
 
     def motor(self, number, value):
         """ Set motor :number to :value """
         if __debug__:
             print "Public: Command received: Motor %s %s" % (number, value)
-        self._set('M', number, value, SABERTOOTH_SET_VALUE)
+        self._set('M', number, value, self.SABERTOOTH_SET_VALUE)
 
 
     def drive(self, value):
@@ -163,7 +172,7 @@ class SabertoothPacketSerial(object):
         """ Send a keepalive call """
         if __debug__:
             print "Public: Command received: keepAlive"
-        self._set('M', '*', 0, SABERTOOTH_SET_KEEPALIVE)
+        self._set('M', '*', 0, self.SABERTOOTH_SET_KEEPALIVE)
 
 
     ##############################
@@ -180,6 +189,12 @@ class SabertoothPacketSerial(object):
         packet[3] = chr(checksum)
 
         return bytes(packet)
+
+    def deadBand(self, value):
+        print "Dead Band..."
+        command = 17
+        self._write_data(self._generate_checksum_packet(command, 0, value))
+        return 0
 
 
     def driveCommand(self, value):
