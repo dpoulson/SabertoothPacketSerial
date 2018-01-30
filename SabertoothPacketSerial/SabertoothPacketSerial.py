@@ -44,10 +44,11 @@ class SabertoothPacketSerial(object):
     _conn = None
     _address = None
     _crc = False
+    _legacy = False
 
 
     """ Main class """
-    def __init__(self, port='/dev/ttyACM0', baudrate='9600', address=128, check='Checksum'):
+    def __init__(self, port='/dev/ttyACM0', baudrate='9600', address=128, check='Checksum' legacy=False):
         """ Initialise the object and connect to the serial port
 
         Parameters:
@@ -55,6 +56,7 @@ class SabertoothPacketSerial(object):
             baudrate: Connection baudrate
             address: Address of sabertooth speed controller
             check: Use Checksum or CRC checks
+            legacy: Boolean to use new or legacy packet serial mode
         """
         if __debug__:
             print "%s : Initialising SabertoothPacketSerial: Port %s : baudrate %s : address %s : Checksum %s " % \
@@ -68,6 +70,7 @@ class SabertoothPacketSerial(object):
         else:
             self._crc = False
         self._address = address
+        self._legacy = legacy
 
 
     def _write_data(self,data):
@@ -158,14 +161,44 @@ class SabertoothPacketSerial(object):
         """ Mixed mode drive """ 
         if __debug__:
             print "Public: Command received: Drive %s" % value
-        self.motor('D', value)
+        if self._legacy = True:
+            if value > 1 or value < -1:
+                print "Invalid value (%s)" % value
+            else:
+                if __debug__:
+                    print "Value: %s" % value
+                if value < 0:
+                    value = -value # Negative numbers have different command and should be positive
+                    command = 9
+                else:
+                    command = 8
+                data = value * 127
+                self._write_data(self._generate_checksum_legacy(command, 0, data))
+            return 0
+        else:
+            self.motor('D', value)
 
 
     def turn(self, value):
         """ Mixed mode turn """
         if __debug__:
             print "Public: Command received: Turn %s" % value
-        self.motor('T', value) 
+        if self._legacy = True:
+            if value > 1 or value < -1:
+                print "Invalid value (%s)" % value
+            else:
+                if __debug__:
+                    print "Value: %s" % value
+                if value < 0:
+                    value = -value # Negative numbers have different command and should be positive
+                    command = 11
+                else:
+                    command = 10
+                data = value * 127
+                self._write_data(self._generate_checksum_legacy(command, 0, data))
+            return 0
+        else:
+            self.motor('T', value) 
 
 
     def keepAlive(self):
@@ -176,9 +209,9 @@ class SabertoothPacketSerial(object):
 
 
     ##############################
-    # Old routines, to be removed
+    # Legacy routines
 
-    def _generate_checksum_packet(self, command, com_value, data):
+    def _generate_checksum_legacy(self, command, com_value, data):
         checksum = (self._address + int(command) + int(data)) & 0b01111111
         # if __debug__:
         #    print "Checksum generated : %s" % str(binascii.hexlify(checksum))
@@ -193,40 +226,6 @@ class SabertoothPacketSerial(object):
     def deadBand(self, value):
         print "Dead Band..."
         command = 17
-        self._write_data(self._generate_checksum_packet(command, 0, value))
-        return 0
-
-
-    def driveCommand(self, value):
-        print "Drive...."
-        if value > 1 or value < -1:
-            print "Invalid value (%s)" % value
-        else:
-            if __debug__:
-                print "Value: %s" % value
-            if value < 0:
-                value = -value # Negative numbers have different command and should be positive
-                command = 9
-            else:
-                command = 8
-            data = value * 127
-            self._write_data(self._generate_checksum_packet(command, 0, data))
-        return 0
-
-
-    def turnCommand(self, value):
-        print "Turn...."
-        if value > 1 or value < -1:
-            print "Invalid value (%s)" % value
-        else:
-            if __debug__:
-                print "Value: %s" % value
-            if value < 0:
-                value = -value # Negative numbers have different command and should be positive
-                command = 11
-            else:
-                command = 10
-            data = value * 127
-            self._write_data(self._generate_checksum_packet(command, 0, data))
+        self._write_data(self._generate_checksum_legacy(command, 0, value))
         return 0
 
