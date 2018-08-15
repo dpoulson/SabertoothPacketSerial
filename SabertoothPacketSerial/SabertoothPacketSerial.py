@@ -48,7 +48,7 @@ class SabertoothPacketSerial(object):
 
 
     """ Main class """
-    def __init__(self, port='/dev/ttyACM0', baudrate='9600', address=128, check='Checksum' legacy=False):
+    def __init__(self, port='/dev/ttyACM0', baudrate='9600', address=128, check='Checksum', legacy=False):
         """ Initialise the object and connect to the serial port
 
         Parameters:
@@ -85,9 +85,7 @@ class SabertoothPacketSerial(object):
 
     def _generate_checksum(self, data):
         """ Sum of data & 0b01111111 """
-        print "Private (checksum): Data: %s " % binascii.hexlify(data)
         total = sum(bytearray(data))
-        print "Private (checksum): Total: %s" % total
         checksum = (total & 0b01111111)
         if __debug__:
             print "Private: Checksum generated: %s" % checksum
@@ -132,13 +130,11 @@ class SabertoothPacketSerial(object):
    
     def _set(self, type, number, value, setType):
         """ Create the set packet """
-        print "setType = %s" % setType
         flag = bytes(setType)
         if value < 0:
             print "Value less than 0"
             value = -value
             flag = flag | 1
-        print "flag = %s" % flag
         data = bytearray(5)
         data[0] = chr(int(flag))
         data[1] = 0 # Reverse bits from value
@@ -161,7 +157,7 @@ class SabertoothPacketSerial(object):
         """ Mixed mode drive """ 
         if __debug__:
             print "Public: Command received: Drive %s" % value
-        if self._legacy = True:
+        if self._legacy == True:
             if value > 1 or value < -1:
                 print "Invalid value (%s)" % value
             else:
@@ -183,7 +179,7 @@ class SabertoothPacketSerial(object):
         """ Mixed mode turn """
         if __debug__:
             print "Public: Command received: Turn %s" % value
-        if self._legacy = True:
+        if self._legacy == True:
             if value > 1 or value < -1:
                 print "Invalid value (%s)" % value
             else:
@@ -224,8 +220,44 @@ class SabertoothPacketSerial(object):
         return bytes(packet)
 
     def deadBand(self, value):
-        print "Dead Band..."
+	if __debug__:
+        	print "Dead Band..."
         command = 17
         self._write_data(self._generate_checksum_legacy(command, 0, value))
+        return 0
+
+    def driveCommand(self, value):
+	if __debug__:
+        	print "Drive...."
+        if value > 1 or value < -1:
+            print "Invalid value (%s)" % value
+        else:
+            if __debug__:
+                print "Value: %s" % value
+            if value < 0:
+                value = -value # Negative numbers have different command and should be positive
+                command = 9
+            else:
+                command = 8
+            data = value * 127
+            self._write_data(self._generate_checksum_legacy(command, 0, data))
+        return 0
+
+
+    def turnCommand(self, value):
+	if __debug__:
+        	print "Turn...."
+        if value > 1 or value < -1:
+            print "Invalid value (%s)" % value
+        else:
+            if __debug__:
+                print "Value: %s" % value
+            if value < 0:
+                value = -value # Negative numbers have different command and should be positive
+                command = 11
+            else:
+                command = 10
+            data = value * 127
+            self._write_data(self._generate_checksum_legacy(command, 0, data))
         return 0
 
