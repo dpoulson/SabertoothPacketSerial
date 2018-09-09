@@ -48,7 +48,7 @@ class SabertoothPacketSerial(object):
 
 
     """ Main class """
-    def __init__(self, port='/dev/ttyACM0', baudrate='9600', address=128, check='Checksum', legacy=False):
+    def __init__(self, port='/dev/ttyACM0', baudrate='9600', address=128, check='Checksum', legacy=False, type='Sabertooth'):
         """ Initialise the object and connect to the serial port
 
         Parameters:
@@ -71,6 +71,7 @@ class SabertoothPacketSerial(object):
             self._crc = False
         self._address = address
         self._legacy = legacy
+        self._type = type
 
 
     def _write_data(self,data):
@@ -236,9 +237,15 @@ class SabertoothPacketSerial(object):
                 print "Value: %s" % value
             if value < 0:
                 value = -value # Negative numbers have different command and should be positive
-                command = 9
+		if self._type == 'Syren':
+                    command = 1
+                else:
+                    command = 9
             else:
-                command = 8
+                if self._type == 'Syren':
+                    command = 0
+                else:
+                    command = 8
             data = value * 127
             self._write_data(self._generate_checksum_legacy(command, 0, data))
         return 0
