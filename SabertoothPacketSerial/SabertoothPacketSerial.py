@@ -19,7 +19,6 @@
 # along with SabertoothPacketSerial.  If not, see <http://www.gnu.org/licenses/>.
 # ===============================================================================
 
-
 from __future__ import print_function
 from builtins import chr
 from builtins import bytes
@@ -44,7 +43,6 @@ class SabertoothPacketSerial():
 
     SABERTOOTH_SET_VALUE = 0x00
     SABERTOOTH_SET_KEEPALIVE = 0x10
-    #SABERTOOTH_SET_KEEPALIVE = 16
     SABERTOOTH_SET_SHUTDOWN = 0x20
     SABERTOOTH_SET_TIMEOUT = 0x40
 
@@ -52,7 +50,6 @@ class SabertoothPacketSerial():
     _address = None
     _crc = False
     _legacy = False
-
 
     """ Main class """
     def __init__(self, port='/dev/ttyACM0', baudrate='9600', address=128,
@@ -83,7 +80,6 @@ class SabertoothPacketSerial():
         self._address = address
         self._legacy = legacy
         self._type = type
-
 
     def _write_data(self, data):
         """ Write the data to the serial port object """
@@ -117,7 +113,7 @@ class SabertoothPacketSerial():
         """ Run command """
         size_d = len(data)
         if self._crc:
-            self._address = address | 0xf0
+            self._address = self._address | 0xf0
             # Do some CRC stufF
         buffer = bytearray()
         buffer.append(self._address)
@@ -147,14 +143,13 @@ class SabertoothPacketSerial():
             flag = flag | 1
         data = bytearray(5)
         data[0] = chr(int(flag))
-        data[1] = 0 # Reverse bits from value
-        data[2] = 0 # Reverse bits from value
+        data[1] = 0  # Reverse bits from value
+        data[2] = 0  # Reverse bits from value
         data[3] = type
         data[4] = number
         if __debug__:
             print("Private: Data to send: %s" % binascii.hexlify(data))
         self._command(self.SABERTOOTH_CMD_SET, data)
-
 
     def motor(self, number, value):
         """ Set motor :number to :value """
@@ -162,19 +157,18 @@ class SabertoothPacketSerial():
             print("Public: Command received: Motor %s %s" % (number, value))
         self._set('M', number, value, self.SABERTOOTH_SET_VALUE)
 
-
     def drive(self, value):
         """ Mixed mode drive """
         if __debug__:
             print("Public: Command received: Drive %s" % value)
-        if self._legacy == True:
+        if self._legacy is True:
             if value > 1 or value < -1:
                 print("Invalid value (%s)" % value)
             else:
                 if __debug__:
                     print("Value: %s" % value)
                 if value < 0:
-                    value = -value # Negative numbers have different command and should be positive
+                    value = -value  # Negative numbers have different command and should be positive
                     command = 9
                 else:
                     command = 8
@@ -185,19 +179,18 @@ class SabertoothPacketSerial():
             self.motor('D', value)
             return 0
 
-
     def turn(self, value):
         """ Mixed mode turn """
         if __debug__:
             print("Public: Command received: Turn %s" % value)
-        if self._legacy == True:
+        if self._legacy is True:
             if value > 1 or value < -1:
                 print("Invalid value (%s)" % value)
             else:
                 if __debug__:
                     print("Value: %s" % value)
                 if value < 0:
-                    value = -value # Negative numbers have different command and should be positive
+                    value = -value  # Negative numbers have different command and should be positive
                     command = 11
                 else:
                     command = 10
@@ -206,7 +199,6 @@ class SabertoothPacketSerial():
             return 0
         else:
             self.motor('T', value)
-
 
     def keepAlive(self):
         """ Send a keepalive call """
@@ -248,7 +240,7 @@ class SabertoothPacketSerial():
             if __debug__:
                 print("Value: %s" % value)
             if value < 0:
-                value = -value # Negative numbers have different command and should be positive
+                value = -value  # Negative numbers have different command and should be positive
                 if self._type == 'Syren':
                     command = 1
                 else:
@@ -272,7 +264,7 @@ class SabertoothPacketSerial():
             if __debug__:
                 print("Value: %s" % value)
             if value < 0:
-                value = -value # Negative numbers have different command and should be positive
+                value = -value  # Negative numbers have different command and should be positive
                 command = 11
             else:
                 command = 10
