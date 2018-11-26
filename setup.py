@@ -12,5 +12,5 @@ setup(name='SabertoothPacketSerial',
       author='Darren Poulson',
       author_email='darren.poulson@gmail.com',
       license='GPL',
-      packages=setuptools.find_packages(),
+      packages=['SabertoothPacketSerial'],
       zip_safe=False)
