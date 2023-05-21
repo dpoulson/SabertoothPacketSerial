@@ -212,13 +212,13 @@ class SabertoothPacketSerial():
     def _generate_checksum_legacy(self, command, com_value, data):
         """ Generate a checksum for legacy serial """
         checksum = (self._address + int(command) + int(data)) & 0b01111111
-        # if __debug__:
-        #    print "Checksum generated : %s" % str(binascii.hexlify(checksum))
+        #if __debug__:
+        #   print "Checksum generated : %s" % str(binascii.hexlify(checksum))
         packet = bytearray(4)
         packet[0] = self._address
-        packet[1] = chr(int(command))
-        packet[2] = chr(int(data))
-        packet[3] = chr(checksum)
+        packet[1] = command
+        packet[2] = int(data)
+        packet[3] = checksum
 
         return bytes(packet)
 
