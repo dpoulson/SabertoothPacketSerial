@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='SabertoothPacketSerial',
-      version='0.2.2',
+      version='0.2.3',
       description='Library for Dimenson Engineering Sabertooth speed controller',
       long_description=long_description,
       long_description_content_type="text/markdown",
